@@ -1,21 +1,51 @@
+// api/send.js
 import nodemailer from "nodemailer";
 
+// For local testing with CORS
+import Cors from "cors";
+
+// Initialize CORS middleware
+const cors = Cors({
+  methods: ["POST", "HEAD"],
+  origin: "*" // Allow all origins for local testing, restrict in production
+});
+
+// Helper to run middleware in Next.js API route
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (result) => {
+      if (result instanceof Error) return reject(result);
+      return resolve(result);
+    });
+  });
+}
+
 export default async function handler(req, res) {
+  // Run CORS
+  await runMiddleware(req, res, cors);
+
+  // Only accept POST requests
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Only POST requests allowed" });
   }
 
   const { name, email, phone, subject, message } = req.body;
 
+  if (!name || !email || !message) {
+    return res.status(400).json({ success: false, message: "Name, email, and message are required." });
+  }
+
   try {
+    // Create transporter
     let transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        pass: process.env.EMAIL_PASS, // Gmail App Password recommended
       },
     });
 
+    // Email options
     let mailOptions = {
       from: `"${name}" <${email}>`,
       to: process.env.EMAIL_USER,
@@ -24,18 +54,19 @@ export default async function handler(req, res) {
         <h2>New Contact Message</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Phone:</strong> ${phone}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Phone:</strong> ${phone || "N/A"}</p>
+        <p><strong>Subject:</strong> ${subject || "N/A"}</p>
         <p><strong>Message:</strong></p>
         <p>${message}</p>
       `,
     };
 
+    // Send email
     await transporter.sendMail(mailOptions);
 
     return res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
-    console.error(error);
+    console.error("Error sending email:", error);
     return res.status(500).json({ success: false, message: "Error sending message" });
   }
 }
