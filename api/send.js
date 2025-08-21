@@ -6,14 +6,15 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ["https://your-portfolio-domain.vercel.app", "http://localhost:5173"],
-  methods: ["POST", "HEAD"]
+  origin: ["https://tanvir-sifat.vercel.app", "http://localhost:5173"],
+  methods: ["POST", "HEAD"],
 }));
 app.use(express.json());
 
 app.post('/api/send', async (req, res) => {
   const { name, email, phone, subject, message } = req.body;
 
+  // Validate required fields
   if (!name || !email || !message) {
     return res.status(400).json({ success: false, message: "Name, email, and message are required." });
   }
@@ -27,6 +28,9 @@ app.post('/api/send', async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
+
+    // Verify transporter configuration
+    await transporter.verify();
 
     // Email options
     let mailOptions = {
@@ -49,8 +53,12 @@ app.post('/api/send', async (req, res) => {
 
     return res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    return res.status(500).json({ success: false, message: "Error sending message: " + error.message });
+    console.error("Error sending email:", {
+      message: error.message,
+      stack: error.stack,
+      emailUser: process.env.EMAIL_USER ? "Set" : "Not set",
+    });
+    return res.status(500).json({ success: false, message: `Error sending message: ${error.message}` });
   }
 });
 
