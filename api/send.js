@@ -60,6 +60,9 @@ export default async function handler(req, res) {
         <p>${message}</p>
       `,
     };
+    console.log("EMAIL_USER:", process.env.EMAIL_USER ? "set" : "NOT set");
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "set" : "NOT set");
+console.log("Request body:", req.body);
 
     // Send email
     await transporter.sendMail(mailOptions);
