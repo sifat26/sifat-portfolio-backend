@@ -8,7 +8,6 @@ export default async function handler(req, res) {
   const { name, email, phone, subject, message } = req.body;
 
   try {
-    // Transporter
     let transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -17,7 +16,6 @@ export default async function handler(req, res) {
       },
     });
 
-    // Mail options
     let mailOptions = {
       from: `"${name}" <${email}>`,
       to: process.env.EMAIL_USER,
@@ -33,7 +31,6 @@ export default async function handler(req, res) {
       `,
     };
 
-    // Send email
     await transporter.sendMail(mailOptions);
 
     return res.status(200).json({ success: true, message: "Message sent successfully!" });
